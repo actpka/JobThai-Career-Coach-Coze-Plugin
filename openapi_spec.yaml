@@ -1,164 +1,209 @@
-openapi: 3.1.0
+yaml 
+openapi: 3.0.3
 info:
   title: JobThai Job Search Plugin
-  description: |
-    Plugin สำหรับค้นหางานและฝึกงานจาก JobThai.com
-    รองรับการค้นหาด้วยทักษะ ตำแหน่ง สถานที่ และประเภทงาน
-    ส่งคืนรายการงานที่ยังเปิดรับสมัครพร้อมรายละเอียดครบถ้วน
+  description: ค้นหาและจับคู่งานจาก JobThai.com
   version: 1.0.0
 
 servers:
   - url: https://jobthai-career-coach-coze-plugin.onrender.com
-    description: Production Server (เปลี่ยนเป็น URL จริงหลัง deploy)
 
 paths:
   /search-jobs:
     get:
       operationId: searchJobs
       summary: ค้นหางานจาก JobThai
-      description: |
-        ค้นหารายการงานจาก JobThai.com โดยกรองตามทักษะ ตำแหน่ง
-        ประเภทงาน และสถานที่ ส่งคืนเฉพาะงานที่ยังเปิดรับสมัครอยู่
       parameters:
         - name: keyword
           in: query
           required: true
-          description: คำค้นหา เช่น ชื่อตำแหน่ง ทักษะ หรือชื่อบริษัท
           schema:
             type: string
-          example: "Python Developer"
+          description: คำค้นหา เช่น Python, Marketing, Design
         - name: job_type
           in: query
           required: false
-          description: ประเภทงาน
           schema:
             type: string
-            enum:
-              - all         # งานทุกประเภท
-              - fulltime    # งานประจำ
-              - parttime    # งานพาร์ทไทม์
-              - internship  # ฝึกงาน
-              - freelance   # ฟรีแลนซ์
+            enum: [all, fulltime, parttime, internship, freelance]
             default: all
-          example: "internship"
         - name: location
           in: query
           required: false
-          description: จังหวัดหรือพื้นที่ที่ต้องการทำงาน
           schema:
             type: string
-          example: "กรุงเทพมหานคร"
-        - name: skills
-          in: query
-          required: false
-          description: ทักษะที่มี คั่นด้วยคอมมา เพื่อใช้ในการ match
-          schema:
-            type: string
-          example: "Python, Machine Learning, SQL"
+          description: จังหวัด เช่น กรุงเทพมหานคร
         - name: limit
           in: query
           required: false
-          description: จำนวนผลลัพธ์สูงสุดที่ต้องการ (1-20)
           schema:
             type: integer
-            minimum: 1
-            maximum: 20
             default: 10
-          example: 10
       responses:
         "200":
           description: รายการงานที่ค้นพบ
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/JobSearchResponse"
-        "400":
-          description: พารามิเตอร์ไม่ถูกต้อง
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          description: Request มากเกินไป กรุณารอสักครู่
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: เกิดข้อผิดพลาดภายในระบบ
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  total_found:
+                    type: integer
+                  returned_count:
+                    type: integer
+                  search_keyword:
+                    type: string
+                  jobs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        job_id:
+                          type: string
+                        title:
+                          type: string
+                        company:
+                          type: string
+                        location:
+                          type: string
+                        salary:
+                          type: string
+                        posted_date:
+                          type: string
+                        is_active:
+                          type: boolean
+                        required_skills:
+                          type: array
+                          items:
+                            type: string
+                        url:
+                          type: string
 
   /match-jobs:
     post:
       operationId: matchJobs
       summary: จับคู่งานกับทักษะของผู้ใช้
-      description: |
-        รับโปรไฟล์ทักษะของผู้ใช้แล้วค้นหางานที่เหมาะสมที่สุดจาก JobThai
-        พร้อมคะแนนความเหมาะสมและเหตุผลประกอบ
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MatchRequest"
+              type: object
+              required:
+                - skills
+              properties:
+                skills:
+                  type: array
+                  items:
+                    type: string
+                  description: รายการทักษะ เช่น ["Python", "SQL"]
+                job_type:
+                  type: string
+                  default: all
+                preferred_location:
+                  type: string
+                limit:
+                  type: integer
+                  default: 10
       responses:
         "200":
-          description: รายการงานที่ match พร้อมคะแนนและเหตุผล
+          description: งานที่ match พร้อมคะแนน
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MatchResponse"
-        "400":
-          description: Body ไม่ถูกต้อง
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: เกิดข้อผิดพลาดภายในระบบ
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  matched_count:
+                    type: integer
+                  user_skills:
+                    type: array
+                    items:
+                      type: string
+                  matches:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        job_id:
+                          type: string
+                        title:
+                          type: string
+                        company:
+                          type: string
+                        location:
+                          type: string
+                        salary:
+                          type: string
+                        url:
+                          type: string
+                        match_score:
+                          type: number
+                        match_percentage:
+                          type: integer
+                        matched_skills:
+                          type: array
+                          items:
+                            type: string
+                        missing_skills:
+                          type: array
+                          items:
+                            type: string
+                        match_reason:
+                          type: string
 
   /job-detail:
     get:
       operationId: getJobDetail
-      summary: ดึงรายละเอียดงานเพิ่มเติม
-      description: ดึงรายละเอียดงานครบถ้วนจาก JobThai โดยใช้ Job ID หรือ URL
+      summary: ดูรายละเอียดงานเพิ่มเติม
       parameters:
         - name: job_id
           in: query
           required: true
-          description: Job ID จาก JobThai (ได้จาก searchJobs)
           schema:
             type: string
-          example: "1234567"
+          description: Job ID จาก JobThai
       responses:
         "200":
           description: รายละเอียดงานครบถ้วน
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/JobDetail"
-        "404":
-          description: ไม่พบงานที่ระบุ หรืองานปิดรับสมัครแล้ว
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  title:
+                    type: string
+                  company:
+                    type: string
+                  location:
+                    type: string
+                  salary:
+                    type: string
+                  description:
+                    type: string
+                  responsibilities:
+                    type: array
+                    items:
+                      type: string
+                  qualifications:
+                    type: array
+                    items:
+                      type: string
+                  benefits:
+                    type: array
+                    items:
+                      type: string
+                  url:
+                    type: string
 
   /health:
     get:
       operationId: healthCheck
       summary: ตรวจสอบสถานะ API
-      description: ใช้ตรวจสอบว่า API ทำงานปกติหรือไม่
       responses:
         "200":
-          description: API ทำงานปกติ
+          description: สถานะ API
           content:
             application/json:
               schema:
@@ -166,254 +211,5 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "ok"
                   timestamp:
                     type: string
-                    format: date-time
-
-# ==========================================
-# COMPONENTS / SCHEMAS
-# ==========================================
-components:
-  schemas:
-
-    # ----- REQUEST SCHEMAS -----
-    MatchRequest:
-      type: object
-      required:
-        - skills
-      properties:
-        skills:
-          type: array
-          description: รายการทักษะที่มี
-          items:
-            type: string
-          minItems: 1
-          example: ["Python", "Machine Learning", "SQL", "Data Analysis"]
-        education_level:
-          type: string
-          description: ระดับการศึกษา
-          enum:
-            - high_school       # มัธยมปลาย/ปวช.
-            - vocational        # ปวส.
-            - bachelor          # ปริญญาตรี
-            - master            # ปริญญาโท
-            - any
-          default: any
-          example: "bachelor"
-        preferred_location:
-          type: string
-          description: จังหวัดที่ต้องการ
-          example: "กรุงเทพมหานคร"
-        job_type:
-          type: string
-          description: ประเภทงานที่ต้องการ
-          enum: [all, fulltime, parttime, internship, freelance]
-          default: all
-        experience_years:
-          type: integer
-          description: ประสบการณ์ทำงาน (ปี)
-          minimum: 0
-          default: 0
-          example: 0
-        limit:
-          type: integer
-          description: จำนวนผลลัพธ์สูงสุด
-          minimum: 1
-          maximum: 20
-          default: 10
-
-    # ----- RESPONSE SCHEMAS -----
-    JobSearchResponse:
-      type: object
-      properties:
-        total_found:
-          type: integer
-          description: จำนวนงานที่ค้นพบทั้งหมดใน JobThai
-          example: 152
-        returned_count:
-          type: integer
-          description: จำนวนงานที่ส่งคืนในครั้งนี้
-          example: 10
-        search_keyword:
-          type: string
-          description: คำค้นหาที่ใช้
-          example: "Python Developer"
-        jobs:
-          type: array
-          items:
-            $ref: "#/components/schemas/JobSummary"
-
-    MatchResponse:
-      type: object
-      properties:
-        matched_count:
-          type: integer
-          description: จำนวนงานที่ match
-          example: 8
-        user_skills:
-          type: array
-          items:
-            type: string
-          description: ทักษะของผู้ใช้ที่ส่งมา
-          example: ["Python", "SQL"]
-        matches:
-          type: array
-          items:
-            $ref: "#/components/schemas/JobMatch"
-
-    JobSummary:
-      type: object
-      properties:
-        job_id:
-          type: string
-          description: รหัสงานใน JobThai
-          example: "1234567"
-        title:
-          type: string
-          description: ชื่อตำแหน่งงาน
-          example: "นักศึกษาฝึกงาน - Data Science"
-        company:
-          type: string
-          description: ชื่อบริษัท
-          example: "Tech Company Co., Ltd."
-        location:
-          type: string
-          description: สถานที่ทำงาน
-          example: "กรุงเทพมหานคร (บางรัก)"
-        job_type:
-          type: string
-          description: ประเภทงาน
-          example: "internship"
-        salary:
-          type: string
-          description: เงินเดือน/ค่าตอบแทน (อาจเป็น range หรือ negotiable)
-          example: "ตามตกลง"
-        posted_date:
-          type: string
-          format: date
-          description: วันที่ประกาศงาน
-          example: "2026-04-05"
-        deadline:
-          type: string
-          format: date
-          description: วันปิดรับสมัคร (null = ไม่ระบุ)
-          example: "2026-05-31"
-        is_active:
-          type: boolean
-          description: งานยังเปิดรับสมัครอยู่หรือไม่
-          example: true
-        required_skills:
-          type: array
-          items:
-            type: string
-          description: ทักษะที่ต้องการ
-          example: ["Python", "SQL", "Excel"]
-        url:
-          type: string
-          description: ลิงก์ไปยังหน้างานบน JobThai
-          example: "https://www.jobthai.com/th/job/1234567"
-
-    JobMatch:
-      allOf:
-        - $ref: "#/components/schemas/JobSummary"
-        - type: object
-          properties:
-            match_score:
-              type: number
-              format: float
-              description: คะแนนความเหมาะสม (0.0 - 1.0)
-              minimum: 0.0
-              maximum: 1.0
-              example: 0.87
-            match_percentage:
-              type: integer
-              description: เปอร์เซ็นต์ความเหมาะสม
-              example: 87
-            matched_skills:
-              type: array
-              items:
-                type: string
-              description: ทักษะที่ตรงกับที่งานต้องการ
-              example: ["Python", "SQL"]
-            missing_skills:
-              type: array
-              items:
-                type: string
-              description: ทักษะที่งานต้องการแต่ผู้ใช้ยังไม่มี
-              example: ["Tableau", "Spark"]
-            match_reason:
-              type: string
-              description: เหตุผลที่งานนี้เหมาะกับผู้สมัคร
-              example: "ทักษะ Python และ SQL ตรงกับความต้องการหลัก เหมาะสำหรับนักศึกษาที่ต้องการประสบการณ์ด้าน Data"
-
-    JobDetail:
-      allOf:
-        - $ref: "#/components/schemas/JobSummary"
-        - type: object
-          properties:
-            description:
-              type: string
-              description: รายละเอียดงานเต็ม
-            responsibilities:
-              type: array
-              items:
-                type: string
-              description: หน้าที่ความรับผิดชอบ
-            qualifications:
-              type: array
-              items:
-                type: string
-              description: คุณสมบัติที่ต้องการ
-            benefits:
-              type: array
-              items:
-                type: string
-              description: สวัสดิการ
-            work_hours:
-              type: string
-              description: เวลาทำงาน
-              example: "จันทร์-ศุกร์ 09:00-18:00"
-            internship_duration:
-              type: string
-              description: ระยะเวลาฝึกงาน (เฉพาะ internship)
-              example: "3-6 เดือน"
-            contact_email:
-              type: string
-              description: อีเมลติดต่อ (ถ้ามี)
-            company_info:
-              $ref: "#/components/schemas/CompanyInfo"
-
-    CompanyInfo:
-      type: object
-      properties:
-        name:
-          type: string
-          example: "Tech Company Co., Ltd."
-        industry:
-          type: string
-          example: "เทคโนโลยีสารสนเทศ"
-        size:
-          type: string
-          example: "51-200 คน"
-        website:
-          type: string
-          example: "https://techcompany.co.th"
-
-    ErrorResponse:
-      type: object
-      required:
-        - error
-        - message
-      properties:
-        error:
-          type: string
-          description: รหัสข้อผิดพลาด
-          example: "INVALID_PARAMETER"
-        message:
-          type: string
-          description: คำอธิบายข้อผิดพลาด
-          example: "keyword ต้องมีความยาวอย่างน้อย 2 ตัวอักษร"
-        details:
-          type: object
-          description: ข้อมูลเพิ่มเติม (ถ้ามี)
