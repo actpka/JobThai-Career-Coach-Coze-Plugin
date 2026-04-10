@@ -1,13 +1,10 @@
 yaml 
 openapi: 3.0.3
 info:
-  title: JobThai Job Search Plugin
-  description: ค้นหาและจับคู่งานจาก JobThai.com
+  title: JobThai Plugin
   version: 1.0.0
-
 servers:
   - url: https://jobthai-career-coach-coze-plugin.onrender.com
-
 paths:
   /search-jobs:
     get:
@@ -17,199 +14,24 @@ paths:
         - name: keyword
           in: query
           required: true
+          description: คำค้นหา เช่น Python
           schema:
             type: string
-          description: คำค้นหา เช่น Python, Marketing, Design
-        - name: job_type
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [all, fulltime, parttime, internship, freelance]
-            default: all
-        - name: location
-          in: query
-          required: false
-          schema:
-            type: string
-          description: จังหวัด เช่น กรุงเทพมหานคร
         - name: limit
           in: query
           required: false
+          description: จำนวนผลลัพธ์
           schema:
             type: integer
-            default: 10
       responses:
         "200":
-          description: รายการงานที่ค้นพบ
+          description: รายการงาน
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  total_found:
-                    type: integer
-                  returned_count:
-                    type: integer
-                  search_keyword:
-                    type: string
                   jobs:
                     type: array
                     items:
                       type: object
-                      properties:
-                        job_id:
-                          type: string
-                        title:
-                          type: string
-                        company:
-                          type: string
-                        location:
-                          type: string
-                        salary:
-                          type: string
-                        posted_date:
-                          type: string
-                        is_active:
-                          type: boolean
-                        required_skills:
-                          type: array
-                          items:
-                            type: string
-                        url:
-                          type: string
-
-  /match-jobs:
-    post:
-      operationId: matchJobs
-      summary: จับคู่งานกับทักษะของผู้ใช้
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - skills
-              properties:
-                skills:
-                  type: array
-                  items:
-                    type: string
-                  description: รายการทักษะ เช่น ["Python", "SQL"]
-                job_type:
-                  type: string
-                  default: all
-                preferred_location:
-                  type: string
-                limit:
-                  type: integer
-                  default: 10
-      responses:
-        "200":
-          description: งานที่ match พร้อมคะแนน
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  matched_count:
-                    type: integer
-                  user_skills:
-                    type: array
-                    items:
-                      type: string
-                  matches:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        job_id:
-                          type: string
-                        title:
-                          type: string
-                        company:
-                          type: string
-                        location:
-                          type: string
-                        salary:
-                          type: string
-                        url:
-                          type: string
-                        match_score:
-                          type: number
-                        match_percentage:
-                          type: integer
-                        matched_skills:
-                          type: array
-                          items:
-                            type: string
-                        missing_skills:
-                          type: array
-                          items:
-                            type: string
-                        match_reason:
-                          type: string
-
-  /job-detail:
-    get:
-      operationId: getJobDetail
-      summary: ดูรายละเอียดงานเพิ่มเติม
-      parameters:
-        - name: job_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Job ID จาก JobThai
-      responses:
-        "200":
-          description: รายละเอียดงานครบถ้วน
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  job_id:
-                    type: string
-                  title:
-                    type: string
-                  company:
-                    type: string
-                  location:
-                    type: string
-                  salary:
-                    type: string
-                  description:
-                    type: string
-                  responsibilities:
-                    type: array
-                    items:
-                      type: string
-                  qualifications:
-                    type: array
-                    items:
-                      type: string
-                  benefits:
-                    type: array
-                    items:
-                      type: string
-                  url:
-                    type: string
-
-  /health:
-    get:
-      operationId: healthCheck
-      summary: ตรวจสอบสถานะ API
-      responses:
-        "200":
-          description: สถานะ API
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  timestamp:
-                    type: string
