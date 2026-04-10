@@ -8,7 +8,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://your-api-url.onrender.com
+  - url: https://jobthai-career-coach-coze-plugin.onrender.com/
     description: Production Server (เปลี่ยนเป็น URL จริงหลัง deploy)
 
 paths:
